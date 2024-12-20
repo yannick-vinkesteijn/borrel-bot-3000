@@ -1,6 +1,6 @@
 import os
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from googleapiclient.discovery import build
 from google.oauth2 import service_account
 from dotenv import load_dotenv
@@ -34,9 +34,9 @@ def get_credentials():
     return credentials, calendar_id
 
 def get_events(credentials, calendar_id, max_results=50, time_min=None):
-    """Get the events from the Google Calendar API."""
+    """Get the events from Google Calendar."""
     if time_min is None:
-        time_min = datetime.now(timezone.utc).isoformat()
+        time_min = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()  # Day before today
 
     service = build('calendar', 'v3', credentials=credentials)
     events_result = service.events().list(
@@ -54,28 +54,21 @@ def get_events(credentials, calendar_id, max_results=50, time_min=None):
         }
         for ev in events_result.get('items', [])
     ]
-
+    # Sort the events by date
+    events = sorted(events, key=lambda x: x['start'])  # Use sorted instead of .sort() to avoid None
     return events
 
 def borrel_info(events):
 
-    current_date = datetime.now(timezone.utc).date()
-    borrel_today = False
-    days_until_next_borrel = None
-
-    for event in events:
-        event_date = datetime.fromisoformat(event["start"]).date()
-        if event_date == current_date:
-            borrel_today = True
-        else:
-            days_df = (event_date - current_date).days
-            if days_df > 0 and (days_until_next_borrel is None or days_df < days_until_next_borrel):
-                days_until_next_borrel = days_df
+    if events:
+        next_event = events[0]["start"]
+    else:
+        next_event = None
     return {
-        "updated_at": datetime.now(timezone.utc).isoformat(),
-        "borrel_today": borrel_today,
-        "borrel_days": days_until_next_borrel
+        "next_borrel": next_event,
+        "updated_at": datetime.now().isoformat()
     }
+
 
 def write_to_json(borrel_status):
     with open('borrel_status.json', 'w') as f:

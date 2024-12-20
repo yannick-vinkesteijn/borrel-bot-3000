@@ -22,6 +22,7 @@
 
         .container {
             text-align: center;
+            margin-top: 100px;
         }
 
         h1 {
@@ -54,19 +55,31 @@
         try {
             const response = await fetch('borrel_status.json');
             const data = await response.json();
+
+            const nextBorrelDate = new Date(data.next_borrel);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);  // Set to the start of the day (to avoid hour mismatch)
+
             const resultElement = document.getElementById('result');
             const gifContainer = document.getElementById('gif-container');
 
-            if (data.borrel_today) {
+            if (!data.next_borrel) {
+                // If there is no upcoming borrel
+                resultElement.textContent = '❌ Geen borrels gepland.';
+                gifContainer.innerHTML = `<img src="https://i.giphy.com/media/v1.Y2lkPTc5MGI3NjExbTY4NGdiOGdlcDd2ZW41NzBrMG85NGR3a2pheTM3ZXN0c2ZyNmRodyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/g7SFZQGzS4HwQ/giphy.gif" alt="Geen Borrel Vandaag GIF">`;
+            } 
+            else if (nextBorrelDate.toDateString() === today.toDateString()) {
+                // If the next borrel is today
                 resultElement.textContent = '🍻 Ja! Tijd voor een borrel! 🍻';
                 gifContainer.innerHTML = `<img src="https://i.giphy.com/media/v1.Y2lkPTc5MGI3NjExNGZscThweDkwdmVvb24zNjAxZGh3ZTdwM3FiZTFmeXlnZ2d6ZGR1MiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/HmIkHqoyhY9Vu/giphy.gif" alt="Borrel Vandaag GIF">`;
-            } else if (data.borrel_days !== null) {
-                resultElement.textContent = `❌ Nee! Pas over ${data.borrel_days} dag(en). 😢`;
-                gifContainer.innerHTML = `<img src="https://i.giphy.com/media/v1.Y2lkPTc5MGI3NjExbTY4NGdiOGdlcDd2ZW41NzBrMG85NGR3a2pheTM3ZXN0c2ZyNmRodyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/g7SFZQGzS4HwQ/giphy.gif" alt="Geen Borrel Vandaag GIF">`;
-            } else {
-                resultElement.textContent = '❌ Nee! Geen borrel gepland. 😢';
+            } 
+            else {
+                // Calculate how many days until the next borrel
+                const daysUntilNextBorrel = Math.ceil((nextBorrelDate - today) / (1000 * 60 * 60 * 24));
+                resultElement.textContent = `❌ Nee, pas over ${daysUntilNextBorrel} dag(en). 😢`;
                 gifContainer.innerHTML = `<img src="https://i.giphy.com/media/v1.Y2lkPTc5MGI3NjExbTY4NGdiOGdlcDd2ZW41NzBrMG85NGR3a2pheTM3ZXN0c2ZyNmRodyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/g7SFZQGzS4HwQ/giphy.gif" alt="Geen Borrel Vandaag GIF">`;
             }
+
         } catch (error) {
             console.error('Error fetching borrel status:', error);
             document.getElementById('result').textContent = 'Kon de gegevens niet laden. ❌';
