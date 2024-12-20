@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wordt er geborreld vandaag?</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-image: url('./images/81512-beer-drink-alcohol-wallpaper-hd-desktop-and-mobile-background-439393147.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            color: #fff;
+            text-shadow: 2px 2px 4px #000;
+        }
+
+        .container {
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+        }
+
+        #result {
+            font-size: 2rem;
+            margin-top: 20px;
+        }
+
+        .gif-container img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Wordt er geborreld vandaag?</h1>
+        <div id="result">Even aan het laden...</div>
+        <div class="gif-container" id="gif-container"></div>
+    </div>
+
+    <script>
+    async function checkForBorrel() {
+        try {
+            const response = await fetch('borrel_status.json');
+            const data = await response.json();
+            const resultElement = document.getElementById('result');
+            const gifContainer = document.getElementById('gif-container');
+
+            if (data.borrel_today) {
+                resultElement.textContent = '🍻 Ja! Tijd voor een borrel! 🍻';
+                gifContainer.innerHTML = `<img src="https://i.giphy.com/media/v1.Y2lkPTc5MGI3NjExNGZscThweDkwdmVvb24zNjAxZGh3ZTdwM3FiZTFmeXlnZ2d6ZGR1MiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/HmIkHqoyhY9Vu/giphy.gif" alt="Borrel Vandaag GIF">`;
+            } else if (data.borrel_days !== null) {
+                resultElement.textContent = `❌ Nee! Pas over ${data.borrel_days} dag(en). 😢`;
+                gifContainer.innerHTML = `<img src="https://i.giphy.com/media/v1.Y2lkPTc5MGI3NjExbTY4NGdiOGdlcDd2ZW41NzBrMG85NGR3a2pheTM3ZXN0c2ZyNmRodyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/g7SFZQGzS4HwQ/giphy.gif" alt="Geen Borrel Vandaag GIF">`;
+            } else {
+                resultElement.textContent = '❌ Nee! Geen borrel gepland. 😢';
+                gifContainer.innerHTML = `<img src="https://i.giphy.com/media/v1.Y2lkPTc5MGI3NjExbTY4NGdiOGdlcDd2ZW41NzBrMG85NGR3a2pheTM3ZXN0c2ZyNmRodyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/g7SFZQGzS4HwQ/giphy.gif" alt="Geen Borrel Vandaag GIF">`;
+            }
+        } catch (error) {
+            console.error('Error fetching borrel status:', error);
+            document.getElementById('result').textContent = 'Kon de gegevens niet laden. ❌';
+        }
+    }
+
+    checkForBorrel();
+    </script>
+
+</body>
+</html>
