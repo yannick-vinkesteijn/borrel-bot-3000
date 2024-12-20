@@ -1,13 +1,16 @@
 name: Update Borrel Status
 
 on:
-  schedule:
-    - cron: '0 9,15 * * *'  # Twice a day at 09:00 and 15:00 UTC
-  workflow_dispatch:  # Allow manual runs for testing
+  repository_dispatch:
+    types:
+      - calendar_change  # Triggered when a calendar change occurs (Google Apps Script sends this event)
 
 jobs:
   update-status:
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: write  # Allows write access to push changes to the repo
 
     steps:
     - name: Checkout repository
@@ -39,9 +42,12 @@ jobs:
         python main.py
 
     - name: Commit and push changes
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Use GitHub token for authentication
       run: |
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
+        git checkout main  # Ensure we're on the main branch
         git add borrel_status.json
         git commit -m "Update borrel status"
         git push
