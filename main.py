@@ -1,6 +1,6 @@
 import os
 import json
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from googleapiclient.discovery import build
 from google.oauth2 import service_account
 from dotenv import load_dotenv
@@ -34,9 +34,9 @@ def get_credentials():
     return credentials, calendar_id
 
 def get_events(credentials, calendar_id, max_results=50, time_min=None):
-    """Get the events from Google Calendar."""
+    """Get all future events from Google Calendar."""
     if time_min is None:
-        time_min = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()  # Day before today
+        time_min = (datetime.now(timezone.utc)).isoformat()  # Include events from yesterday
 
     service = build('calendar', 'v3', credentials=credentials)
     events_result = service.events().list(
@@ -50,39 +50,30 @@ def get_events(credentials, calendar_id, max_results=50, time_min=None):
     events = [
         {
             "start": ev['start'].get('dateTime', ev['start'].get('date')),
-            "name": ev.get('summary', 'Unnamed Event')
+            "end": ev['end'].get('dateTime', ev['end'].get('date')),
+            "name": ev.get('summary', 'Unnamed Event'),
+            "location": ev.get('location', 'Onbekend'),
         }
         for ev in events_result.get('items', [])
     ]
-    # Sort the events by date
-    events = sorted(events, key=lambda x: x['start'])  # Use sorted instead of .sort() to avoid None
     return events
 
-def borrel_info(events):
-
-    if events:
-        next_event = events[0]["start"]
-    else:
-        next_event = None
-    return {
-        "next_borrel": next_event,
-        "updated_at": datetime.now().isoformat()
+def write_to_json(events):
+    """Write all future events to JSON."""
+    status = {
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "events": events  # Store all future events
     }
-
-
-def write_to_json(borrel_status):
     with open('borrel_status.json', 'w') as f:
-        json.dump(borrel_status, f, indent=2)
+        json.dump(status, f, indent=2)
 
 def main():
     """Main execution logic."""
     try:
         credentials, calendar_id = get_credentials()
         events = get_events(credentials, calendar_id)
-        borrel_status = borrel_info(events)
-        write_to_json(borrel_status)
+        write_to_json(events)
         print(f"Found {len(events)} events.")
-        print(json.dumps(borrel_status, indent=2))
     except Exception as e:
         print(f"Error: {e}")
 
