@@ -1,11 +1,11 @@
 {
-  "updated_at": "2025-01-01T11:45:11.600880+00:00",
+  "updated_at": "2025-01-02T11:01:10.214514+00:00",
   "events": [
     {
-      "start": "2025-01-01T15:00:00+01:00",
-      "end": "2025-01-01T21:00:00+01:00",
-      "name": "Nieuwjaarsduik",
-      "location": "Fonteyn"
+      "start": "2025-01-02T18:00:00+01:00",
+      "end": "2025-01-02T22:00:00+01:00",
+      "name": "Hotpot",
+      "location": "Marie Heinekenplein\nAmsterdam, Netherlands"
     }
   ]
 }
