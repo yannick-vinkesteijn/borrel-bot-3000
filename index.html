@@ -50,63 +50,72 @@
         <div id="countdown"></div>
         <div class="gif-container" id="gif-container"></div>
     </div>
+<script>
+async function checkForBorrel() {
+    try {
+        const [statusResponse, gifsResponse] = await Promise.all([
+            fetch('borrel_status.json'),
+            fetch('gifs.json')
+        ]);
+        const data = await statusResponse.json();
+        const gifs = await gifsResponse.json();
 
-    <script>
-    async function checkForBorrel() {
-        try {
-            const response = await fetch('borrel_status.json');
-            const data = await response.json();
+        const events = data.events;
+        const now = new Date();
 
-            const events = data.events;
-            const now = new Date();
+        const resultElement = document.getElementById('result');
+        const countdownElement = document.getElementById('countdown');
+        const gifContainer = document.getElementById('gif-container');
 
-            const resultElement = document.getElementById('result');
-            const countdownElement = document.getElementById('countdown');
-            const gifContainer = document.getElementById('gif-container');
+        // Check for an ongoing event
+        const ongoingEvent = events.find(event => {
+            const start = new Date(event.start);
+            const end = new Date(event.end);
+            return now >= start && now <= end;
+        });
 
-            // Check for an ongoing event
-            const ongoingEvent = events.find(event => {
-                const start = new Date(event.start);
-                const end = new Date(event.end);
-                return now >= start && now <= end; // Check if now is within the event's range
-            });
-
-            if (ongoingEvent) {
-                // If an ongoing event is found
-                const location = ongoingEvent.location;
-                resultElement.innerHTML = `🍻 Ja! Tijd voor een borrel! 🍻<br>📍: ${location}`;
-                gifContainer.innerHTML = `<img src="https://i.giphy.com/media/v1.Y2lkPTc5MGI3NjExNGZscThweDkwdmVvb24zNjAxZGh3ZTdwM3FiZTFmeXlnZ2d6ZGR1MiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/HmIkHqoyhY9Vu/giphy.gif" alt="Borrel Vandaag GIF">`;
-                countdownElement.textContent = '';
-                return;
-            }
-
-            // Find the next upcoming event
-            const nextEvent = events.find(event => new Date(event.start) > now);
-
-            if (!nextEvent) {
-                // If no future events are found
-                resultElement.textContent = '❌ Geen borrels gepland.';
-                gifContainer.innerHTML = `<img src="https://i.giphy.com/media/v1.Y2lkPTc5MGI3NjExeGcwbWhoc3F3azJrd240ZTlrZGV3M2o2cTgyMGVtNXdiN3E0cTg1cSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/6elaldF6BDY40/giphy.gif" alt="Geen Borrel Vandaag GIF">`;
-                countdownElement.textContent = '';
-            } else {
-                // Calculate countdown to the next event
-                const start = new Date(nextEvent.start);
-                const timeDiff = start - now;
-                const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
-                const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const location = nextEvent.location;
-
-                resultElement.textContent = `❌ Nee, pas over ${days} dag(en) en ${hours} uur. 😢`;
-                gifContainer.innerHTML = `<img src="https://i.giphy.com/media/v1.Y2lkPTc5MGI3NjExbTY4NGdiOGdlcDd2ZW41NzBrMG85NGR3a2pheTM3ZXN0c2ZyNmRodyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/g7SFZQGzS4HwQ/giphy.gif" alt="Geen Borrel Vandaag GIF">`;
-            }
-        } catch (error) {
-            console.error('Error fetching borrel status:', error);
-            document.getElementById('result').textContent = 'Kon de gegevens niet laden. ❌';
+        if (ongoingEvent) {
+            const location = ongoingEvent.location;
+            resultElement.innerHTML = `🍻 De borrel is NU bezig! 🍻<br>📍: ${location}`;
+            gifContainer.innerHTML = `<img src="${gifs.party_gandalf}" alt="Borrel Nu GIF">`;
+            countdownElement.textContent = '';
+            return;
         }
-    }
 
-    checkForBorrel();
-    </script>
+        // Find the next upcoming event
+        const nextEvent = events.find(event => new Date(event.start) > now);
+
+        if (!nextEvent) {
+            resultElement.textContent = '❌ Geen borrels gepland.';
+            gifContainer.innerHTML = `<img src="${gifs.lotr_end_of_all}" alt="Geen Borrel Vandaag GIF">`;
+            countdownElement.textContent = '';
+        } else {
+            const start = new Date(nextEvent.start);
+            const timeDiff = start - now;
+            const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const location = nextEvent.location;
+
+            // Check if the next event is today
+            const isToday = start.toDateString() === now.toDateString();
+
+            if (isToday) {
+                resultElement.innerHTML = `🎉 Ja, over ${hours} uur! 🥳`;
+                gifContainer.innerHTML = `<img src="${gifs.adventure}" alt="Borrel Vandaag GIF">`;
+                resultElement.innerHTML += `<br>📍: ${location}`
+            } else {
+                resultElement.textContent = `❌ Nee, pas over ${days} dag(en) en ${hours} uur. 😢`;
+                gifContainer.innerHTML = `<img src="${gifs.valley_walk}" alt="Borrel Gepland Maar Niet Vandaag GIF">`;
+            }
+        }
+    } catch (error) {
+        console.error('Error fetching borrel status or gifs:', error);
+        document.getElementById('result').textContent = 'Kon de gegevens niet laden. ❌';
+    }
+}
+
+checkForBorrel();
+</script>
 
 </body>
 </html>
