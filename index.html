@@ -4,9 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wordt er geborreld vandaag?</title>
+    <link rel="icon" href="favicon.ico">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --text-color: #f0f0f0;
+            --bg-overlay: rgba(0, 0, 0, 0.6);
+        }
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Inter', sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -16,22 +23,29 @@
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
-            color: #fff;
+            color: var(--text-color);
             text-shadow: 2px 2px 4px #000;
         }
-
+        .hidden {
+            display: none;
+        }
         .container {
+            background-color: var(--bg-overlay);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
             text-align: center;
-            margin-top: 100px;
+            max-width: 600px;
+            width: 90%;
         }
 
         h1 {
-            font-size: 3rem;
+            font-size: 2.8rem;
             margin-bottom: 20px;
         }
 
         #result {
-            font-size: 2rem;
+            font-size: 1.8rem;
             margin-top: 20px;
         }
 
@@ -39,83 +53,108 @@
             max-width: 100%;
             height: auto;
             border-radius: 20px;
+            margin-top: 20px;
+        }
+
+        .fade-in {
+            opacity: 0;
+            animation: fadeIn 1s ease-in forwards;
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+            }
+        }
+
+        #countdown {
+            font-size: 1.2rem;
+            margin-top: 10px;
         }
     </style>
 </head>
 <body>
-
     <div class="container">
         <h1>Wordt er geborreld vandaag?</h1>
-        <div id="result">Even aan het laden...</div>
-        <div id="countdown"></div>
-        <div class="gif-container" id="gif-container"></div>
+        <div id="dynamic-content" class="hidden">
+            <div id="result">Even aan het laden...</div>
+            <div id="countdown"></div>
+            <div class="gif-container" id="gif-container"></div>
+        </div>
     </div>
-<script>
-async function checkForBorrel() {
-    try {
-        const [statusResponse, gifsResponse] = await Promise.all([
-            fetch('borrel_status.json'),
-            fetch('gifs.json')
-        ]);
-        const data = await statusResponse.json();
-        const gifs = await gifsResponse.json();
 
-        const events = data.events;
-        const now = new Date();
+    <script>
+    async function checkForBorrel() {
+        try {
+            const [statusResponse, gifsResponse] = await Promise.all([
+                fetch('borrel_status.json'),
+                fetch('gifs.json')
+            ]);
+            const data = await statusResponse.json();
+            const gifs = await gifsResponse.json();
 
-        const resultElement = document.getElementById('result');
-        const countdownElement = document.getElementById('countdown');
-        const gifContainer = document.getElementById('gif-container');
+            const events = data.events;
+            const now = new Date();
 
-        // Check for an ongoing event
-        const ongoingEvent = events.find(event => {
-            const start = new Date(event.start);
-            const end = new Date(event.end);
-            return now >= start && now <= end;
-        });
+            const resultElement = document.getElementById('result');
+            const countdownElement = document.getElementById('countdown');
+            const gifContainer = document.getElementById('gif-container');
 
-        if (ongoingEvent) {
-            const location = ongoingEvent.location;
-            resultElement.innerHTML = `🍻 De borrel is NU bezig! 🍻<br>📍: ${location}`;
-            gifContainer.innerHTML = `<img src="${gifs.party_gandalf}" alt="Borrel Nu GIF">`;
-            countdownElement.textContent = '';
-            return;
-        }
+            resultElement.classList.add("fade-in");
 
-        // Find the next upcoming event
-        const nextEvent = events.find(event => new Date(event.start) > now);
+            const ongoingEvent = events.find(event => {
+                const start = new Date(event.start);
+                const end = new Date(event.end);
+                return now >= start && now <= end;
+            });
 
-        if (!nextEvent) {
-            resultElement.textContent = '❌ Geen borrels gepland.';
-            gifContainer.innerHTML = `<img src="${gifs.lotr_end_of_all}" alt="Geen Borrel Vandaag GIF">`;
-            countdownElement.textContent = '';
-        } else {
-            const start = new Date(nextEvent.start);
-            const timeDiff = start - now;
-            const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const location = nextEvent.location;
-
-            // Check if the next event is today
-            const isToday = start.toDateString() === now.toDateString();
-
-            if (isToday) {
-                resultElement.innerHTML = `🎉 Ja, over ${hours} uur! 🥳`;
-                gifContainer.innerHTML = `<img src="${gifs.adventure}" alt="Borrel Vandaag GIF">`;
-                resultElement.innerHTML += `<br>📍: ${location}`
-            } else {
-                resultElement.textContent = `❌ Nee, pas over ${days} dag(en) en ${hours} uur. 😢`;
-                gifContainer.innerHTML = `<img src="${gifs.valley_walk}" alt="Borrel Gepland Maar Niet Vandaag GIF">`;
+            if (ongoingEvent) {
+                const location = ongoingEvent.location;
+                resultElement.innerHTML = `🍻 De borrel is NU bezig! 🍻<br>📍: ${location}`;
+                gifContainer.innerHTML = `<img src="${gifs.party_gandalf}" alt="Borrel Nu GIF" loading="lazy">`;
+                countdownElement.textContent = '';
+                document.getElementById('dynamic-content').classList.remove('hidden');
+                return;
             }
+
+            const nextEvent = events.find(event => new Date(event.start) > now);
+
+            if (!nextEvent) {
+                resultElement.innerHTML = '❌ Geen borrels gepland.';
+                gifContainer.innerHTML = `<img src="${gifs.lotr_end_of_all}" alt="Geen Borrel Vandaag GIF" loading="lazy">`;
+                countdownElement.textContent = '';
+            } else {
+                const start = new Date(nextEvent.start);
+                const timeDiff = start - now;
+                const startTime = start.toLocaleTimeString([], { hour: 'numeric', minute: 'numeric', hour12: false });
+                const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const location = nextEvent.location;
+                const isToday = start.toDateString() === now.toDateString();
+
+                if (isToday) {
+                    resultElement.innerHTML = `🎉 Ja, om ${startTime} 🥳<br><span style="font-size: 0.9rem;">📍: ${location}</span>`;
+                    gifContainer.innerHTML = `<img src="${gifs.adventure}" alt="Borrel Vandaag GIF" loading="lazy">`;
+                    document.getElementById('dynamic-content').classList.remove('hidden');
+                } else if (days === 0 || days === 1) {
+                    resultElement.innerHTML = `❌ Nee, pas morgen om ${startTime}. 😢<br><span style="font-size: 0.9rem;">📍: ${location}</span>`;
+                    gifContainer.innerHTML = `<img src="${gifs.valley_walk}" alt="Borrel Morgen GIF" loading="lazy">`;
+                    document.getElementById('dynamic-content').classList.remove('hidden');
+                } else {
+                    resultElement.innerHTML = `❌ Nee, pas over ${days} dag(en) en ${hours} uur. 😢<br><span style="font-size: 0.9rem;">📍: ${location}</span>`;
+                    gifContainer.innerHTML = `<img src="${gifs.valley_walk}" alt="Borrel Later GIF" loading="lazy">`;
+                    document.getElementById('dynamic-content').classList.remove('hidden');
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching borrel status or gifs:', error);
+            document.getElementById('result').innerHTML = '😵 Oeps! De borrelstatus kon niet worden opgehaald.';
+            document.getElementById('gif-container').innerHTML = `<img src="${gifs.not_pass}" alt="Error GIF" loading="lazy">`;
+            document.getElementById('dynamic-content').classList.remove('hidden');
         }
-    } catch (error) {
-        console.error('Error fetching borrel status or gifs:', error);
-        document.getElementById('result').textContent = 'Kon de gegevens niet laden. ❌';
     }
-}
 
-checkForBorrel();
-</script>
-
+    checkForBorrel();
+    </script>
 </body>
 </html>
